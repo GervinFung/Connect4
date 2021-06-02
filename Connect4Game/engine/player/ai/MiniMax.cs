@@ -32,7 +32,7 @@ namespace Connect4Game.engine.player.ai
         public MiniMax(in League aiLeague, in int depth)
         {
             _aiLeague = aiLeague;
-            _depth = depth - (depth % 2 == 1 ? 1 : 0);
+            _depth = depth;
             _evaluator = new StandardEval();
         }
 
@@ -40,8 +40,7 @@ namespace Connect4Game.engine.player.ai
         {
             List<Move> sortedList = new List<Move>();
             Dictionary<Move, int> moveScore = new Dictionary<Move, int>();
-            foreach (Move move in legalMoves) { moveScore[move] = POSITION_EVAL[move.GetIndex()]; }
-            
+            legalMoves.ForEach(move => { moveScore[move] = POSITION_EVAL[move.GetIndex()]; });
             List<KeyValuePair<Move, int>> myList = moveScore.ToList();
 
             myList.Sort(
@@ -59,11 +58,11 @@ namespace Connect4Game.engine.player.ai
 
             ImmutableList<Move> legalMove = MoveSorter(currentPlayer.GetLegalMoves);
             Move bestMove = legalMove[0];
-            
+
             foreach (Move move in legalMove)
             {
                 Board tempBoard = currentPlayer.MakeMove(move);
-                if (tempBoard.IsWin()) { return move; }
+                if (tempBoard.GetCurrentPlayer.IsStalemate() || tempBoard.GetCurrentPlayer.IsInCheckmate()) { return move; }
                 int currentVal = LeagueExtensions.IsBlack(currentPlayer.GetLeague()) ?
                     Min(tempBoard, _depth - 1, highestSeenValue, lowestSeenValue) :
                     Max(tempBoard, _depth - 1, highestSeenValue, lowestSeenValue);
@@ -79,15 +78,17 @@ namespace Connect4Game.engine.player.ai
 
             return bestMove;
         }
-        
+
         private int Min(in Board board, in int depth, in int highestValue, in int lowestValue)
         {
-            if (depth == 0) { return _evaluator.EvaluateBoard(board, _aiLeague); }
+            if (depth == 0 || board.GetCurrentPlayer.IsInCheckmate() || board.GetCurrentPlayer.IsStalemate())
+            {
+                return _evaluator.EvaluateBoard(board, _aiLeague, depth, _depth);
+            }
             int currentLowest = lowestValue;
             foreach (Move move in MoveSorter(board.GetCurrentPlayer.GetLegalMoves)) 
             {
                 Board tempBoard = board.GetCurrentPlayer.MakeMove(move);
-                if (tempBoard.IsWin()) { return Int32.MaxValue; }
                 currentLowest = Math.Min(currentLowest, Max(tempBoard, depth - 1, highestValue, currentLowest));
                 if (currentLowest <= highestValue) {
                     return highestValue;
@@ -98,12 +99,14 @@ namespace Connect4Game.engine.player.ai
 
         private int Max(in Board board, in int depth, in int highestValue, in int lowestValue)
         {
-            if (depth == 0) { return _evaluator.EvaluateBoard(board, _aiLeague); }
+            if (depth == 0 || board.GetCurrentPlayer.IsInCheckmate() || board.GetCurrentPlayer.IsStalemate())
+            {
+                return _evaluator.EvaluateBoard(board, _aiLeague, depth, _depth);
+            }
             int currentHighest = highestValue;
             foreach (Move move in MoveSorter(board.GetCurrentPlayer.GetLegalMoves)) 
             {
                 Board tempBoard = board.GetCurrentPlayer.MakeMove(move);
-                if (tempBoard.IsWin()) { return Int32.MinValue; }
                 currentHighest = Math.Max(currentHighest, Min(tempBoard, depth - 1, currentHighest, lowestValue));
                 if (currentHighest >= lowestValue) {
                     return lowestValue;

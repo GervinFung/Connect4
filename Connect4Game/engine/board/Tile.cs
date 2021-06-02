@@ -10,7 +10,7 @@ namespace Connect4Game.engine.board
         public static Tile CreateTile(in Piece piece, in int index) { return piece == null ? new EmptyTile(index) : new OccupiedTile(piece, index); }
         public abstract bool IsTileOccupied();
         public abstract Piece GetPiece();
-        
+
         private sealed class OccupiedTile : Tile
         {
             private readonly Piece _piece;

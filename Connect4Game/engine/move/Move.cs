@@ -22,7 +22,7 @@ namespace Connect4Game.engine.move
         }
 
         public int GetIndex() { return _piece.GetIndex; }
-        
+
         public override int GetHashCode() { return _piece.GetHashCode() * 31; }
 
         public override bool Equals(object obj)
@@ -38,7 +38,7 @@ namespace Connect4Game.engine.move
             if (move == null) { throw new ArgumentException("Move cannot be null at Equals method"); }
             return move._piece.Equals(_piece);
         }
-        
+
         public static bool operator == (Move move1, Move move2)
         {
             if (ReferenceEquals(move1, move2)) return true;

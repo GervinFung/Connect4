@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Windows.Forms;
 using Connect4Game.engine.move;
 using Connect4Game.engine.piece;
@@ -34,16 +35,11 @@ namespace Connect4Game.gui.game_tile
                 bool aiNotFunction = form.IsAIStopped || !form.IsAIThinking;
                 if (!form.IsEndGame && aiNotFunction)
                 {
-                    foreach (Move move in form.GetBoard.GetCurrentPlayer.GetLegalMoves)
-                    {
-                        if (move.GetIndex() % form.GetBoard.NumCol == col)
-                        {
-                            form.GetTileButtonList.OccupiedTheTileButtonAt(move.GetIndex(), LeagueExtensions.IsBlack(form.GetBoard.GetCurrentPlayer.GetLeague()) ? Color.Black : Color.FromArgb(191, 10, 18));
-                            form.UpdateBoard(form.GetBoard.GetCurrentPlayer.MakeMove(move));
-                            form.FireComputer();
-                            return;
-                        }
-                    }
+                    Move moveFound = form.GetBoard.GetCurrentPlayer.GetLegalMoves.Single(move => move.GetIndex() % form.GetBoard.NumCol == col);
+                    form.GetTileButtonList.OccupiedTheTileButtonAt(moveFound.GetIndex(), LeagueExtensions.IsBlack(form.GetBoard.GetCurrentPlayer.GetLeague()) ? Color.Black : Color.FromArgb(191, 10, 18));
+                    form.UpdateBoard(form.GetBoard.GetCurrentPlayer.MakeMove(moveFound));
+                    form.FireComputer();
+                    return;
                 }
                 form.DisplayEndgameMessage();
             };
@@ -76,7 +72,7 @@ namespace Connect4Game.gui.game_tile
             base.OnPaint(paintEventArgs);
         }
 
-        public void RedrawAsDefaultTile() { base.BackColor = DEFAULT; }
+        public void RedrawAsDefaultTile() { BackColor = DEFAULT; }
 
         protected override bool ShowFocusCues => false;
     }

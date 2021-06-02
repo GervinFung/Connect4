@@ -43,7 +43,7 @@ namespace Connect4Game.gui
 
         public void FireComputer()
         {
-            if (_gameSetupPanel.IsAiPlayer(_board.GetCurrentPlayer) && !_board.IsEndGame() && !_isAiThinking)
+            if (_gameSetupPanel.IsAiPlayer(_board.GetCurrentPlayer) && !_board.GetCurrentPlayer.IsInCheckmate() && !_board.GetCurrentPlayer.IsStalemate() && !_isAiThinking)
             {
                 Invoke((Action)(() => { new AiWorker(this).RunWorkerAsync(); }));
             }
@@ -100,13 +100,13 @@ namespace Connect4Game.gui
                 MessageBox.Show("Start a new game to continue");
                 return;
             }
-            if (_board.IsWin())
+            if (_board.GetCurrentPlayer.IsInCheckmate())
             {
                 _endGame = true;
                 MessageBox.Show(_board.GetCurrentPlayer.GetOpponent() + " has won!");
             }
 
-            if (_board.IsDraw())
+            if (_board.GetCurrentPlayer.IsStalemate())
             {
                 _endGame = true;
                 MessageBox.Show("Game is drawn!");

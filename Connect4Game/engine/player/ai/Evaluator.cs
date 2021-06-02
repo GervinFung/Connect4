@@ -7,22 +7,20 @@ namespace Connect4Game.engine.player.ai
 {
     public abstract class Evaluator
     {
-        public abstract int EvaluateBoard(in Board board, in League league);
+        public abstract int EvaluateBoard(in Board board, in League league, in int depth, in int searchDepth);
     }
-    
+
     public sealed class StandardEval : Evaluator
     {
-        public override int EvaluateBoard(in Board board, in League league)
+        public override int EvaluateBoard(in Board board, in League league, in int depth, in int searchDepth)
         {
-            League currentLeague = LeagueExtensions.IsBlack(league)
-                ? board.GetCurrentPlayer.GetOpponent().GetLeague()
-                : board.GetCurrentPlayer.GetLeague();
-            League enemyLeague = LeagueExtensions.IsBlack(league)
-                ? board.GetCurrentPlayer.GetLeague()
-                : board.GetCurrentPlayer.GetOpponent().GetLeague();
-            return NumberOfConsecutivePieceEval(board, currentLeague, enemyLeague);
+            if (depth == 0)
+            {
+                return NumberOfConsecutivePieceEval(league, board, board.GetRedPlayer.GetLeague(), board.GetBlackPlayer.GetLeague());
+            }
+            return NumberOfConsecutivePieceEval(league, board, board.GetRedPlayer.GetLeague(), board.GetBlackPlayer.GetLeague()) * (searchDepth - depth);
         }
-        private static int NumberOfConsecutivePieceEval(in Board board, in League currentLeague, in League enemyLeague)
+        private static int NumberOfConsecutivePieceEval(in League league, in Board board, in League currentLeague, in League enemyLeague)
         {
             int score = 0;
 
@@ -36,12 +34,12 @@ namespace Connect4Game.engine.player.ai
                     if (eLeagues[j] == currentLeague) { currentTile++; }
                     else if (eLeagues[j] == enemyLeague) { enemyTile++; }
                     else if (eLeagues[j] == League.Empty) { emptyTile++; }
-            
+
                     if (j == max)
                     {
                         j = begin;
                         i++;
-                        score += ComputeScore(currentTile, enemyTile, emptyTile);
+                        score += ComputeScore(league, currentTile, enemyTile, emptyTile);
                         if (i == maxRun) { break; }
                         begin++;
                         max++;
@@ -52,7 +50,6 @@ namespace Connect4Game.engine.player.ai
                 }
             }
 
-            
             foreach (ImmutableList<League> eLeagues in GetAllHorizontalRow(board))
             {
                 int begin = 0, max = 3;
@@ -65,12 +62,12 @@ namespace Connect4Game.engine.player.ai
                     if (eLeagues[j] == currentLeague) { currentTile++; }
                     else if (eLeagues[j] == enemyLeague) { enemyTile++; }
                     else if (eLeagues[j] == League.Empty) { emptyTile++; }
-                        
+
                     if (j == max)
                     {
                         j = begin;
                         i++;
-                        score += ComputeScore(currentTile, enemyTile, emptyTile);
+                        score += ComputeScore(league, currentTile, enemyTile, emptyTile);
                         if (i == maxRun) { break; }
                         begin++;
                         max++;
@@ -80,8 +77,7 @@ namespace Connect4Game.engine.player.ai
                     }
                 }
             }
-            
-            
+
             foreach (ImmutableList<League> eLeagues in GetPositiveSlopeRow(board))
             {
                 int begin = 0, max = 3;
@@ -92,10 +88,9 @@ namespace Connect4Game.engine.player.ai
                     if (eLeagues[j] == currentLeague) { currentTile++; }
                     else if (eLeagues[j] == enemyLeague) { enemyTile++; }
                     else if (eLeagues[j] == League.Empty) { emptyTile++; }
-                
                     if (j == max)
                     {
-                        score += ComputeScore(currentTile, enemyTile, emptyTile);
+                        score += ComputeScore(league, currentTile, enemyTile, emptyTile);
                         if (i == maxRun) { break; }
                         i++;
                         j = begin;
@@ -106,10 +101,8 @@ namespace Connect4Game.engine.player.ai
                         enemyTile = 0;
                     }
                 }
-                
             }
-            
-            
+
             foreach (ImmutableList<League> eLeagues in GetNegativeSlopeRow(board))
             {
                 int begin = 0, max = 3;
@@ -120,10 +113,10 @@ namespace Connect4Game.engine.player.ai
                     if (eLeagues[j] == currentLeague) { currentTile++; }
                     else if (eLeagues[j] == enemyLeague) { enemyTile++; }
                     else if (eLeagues[j] == League.Empty) { emptyTile++; }
-                        
+
                     if (j == max)
                     {
-                        score += ComputeScore(currentTile, enemyTile, emptyTile);
+                        score += ComputeScore(league, currentTile, enemyTile, emptyTile);
                         if (i == maxRun) { break; }
                         i++;
                         j = begin;
@@ -139,19 +132,21 @@ namespace Connect4Game.engine.player.ai
             return score;
         }
 
-        private static int ComputeScore(in int currentTile, in int enemyTile, in int emptyTile)
+        private static int ComputeScore(in League league, in int currentTile, in int enemyTile, in int emptyTile)
         {
-            if (currentTile == 1 && emptyTile == 3) { return 1; }
-            if (currentTile == 2 && emptyTile == 2) { return 5; }
-            if (currentTile == 3 && emptyTile == 1) { return 1000; }
-            if (currentTile == 4 && emptyTile == 0) { return 100000; }
+            int magnifier = LeagueExtensions.IsBlack(league) ? 100 : 1;
 
-            if (emptyTile == 4 && emptyTile == 0) { return -2000000; }
+            if (currentTile == 1 && emptyTile == 3) { return 1 * magnifier; }
+            if (currentTile == 2 && emptyTile == 2) { return 100 * magnifier; }
+            if (currentTile == 3 && emptyTile == 1) { return 10000 * magnifier; }
+            if (currentTile == 4 && emptyTile == 0) { return 20000 * magnifier; }
+
+            if (enemyTile == 4 && emptyTile == 0) { return -2000000; }
             if (enemyTile == 3 && emptyTile == 1) { return -1000000; }
             if (enemyTile == 2 && emptyTile == 2) { return -10000; }
             if (enemyTile == 1 && emptyTile == 3) { return -100; }
-            if (enemyTile > currentTile) { return -100; }
 
+            if (enemyTile > currentTile) { return -100; }
             if (currentTile > enemyTile) { return 100; }
 
             return 0;
@@ -217,7 +212,7 @@ namespace Connect4Game.engine.player.ai
                 {
                     listOfLeagues.Add(leagues.ToImmutableList());
                     leagues = new List<League>();
-                    
+
                     if (begin == 20) { break; }
                     if (begin == increment && !goEdge) { goEdge = true; }
 
@@ -245,7 +240,7 @@ namespace Connect4Game.engine.player.ai
                 {
                     listOfLeagues.Add(leagues.ToImmutableList());
                     leagues = new List<League>();
-                    
+
                     if (begin == 14) { break; }
                     if (begin == 0 && !goEdge) { goEdge = true; }
 

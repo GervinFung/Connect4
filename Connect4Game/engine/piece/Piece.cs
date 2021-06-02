@@ -13,11 +13,11 @@ namespace Connect4Game.engine.piece
         }
         public int GetIndex => _index;
         public League GetLeague => _league;
-        private int GetScore() { return LeagueExtensions.GetLeagueScore(_league); }
         public bool Equals(Piece piece)
         {
             if (piece == null) { throw new ArgumentException("Piece cannot be null at Equals method"); }
-            return piece.GetHashCode() == GetHashCode() && piece._index == _index && piece.GetScore() == GetScore();
+
+            return piece.GetHashCode() == GetHashCode() && piece._index == _index;
         }
         
         public static bool operator == (Piece piece1, Piece piece2)
